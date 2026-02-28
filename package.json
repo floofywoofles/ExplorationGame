@@ -4,9 +4,14 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/chalk": "^2.2.4",
+    "@types/node": "^25.3.0"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "chalk": "^5.6.2"
   }
 }
