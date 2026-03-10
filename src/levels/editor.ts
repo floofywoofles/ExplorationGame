@@ -242,6 +242,10 @@ stdin.on("data", async (key: string) => {
     } else if (flags.searching) {
         switch (key) {
             case "w":
+                searchY--;
+                break;
+            case "s":
+                searchY++;
                 break;
         }
     }
