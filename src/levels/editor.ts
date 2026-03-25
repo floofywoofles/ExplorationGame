@@ -13,14 +13,15 @@ let flags = {
     editing: true,
     resizing: false,
     searching: false,
-}
+};
 
 let cursor: string | undefined;
+
+let options = ["Search for item by ID"];
 
 let y: number = 0;
 let x: number = 0;
 let searchY: number = 0;
-let searchX: number = 0;
 let objectIndex: number = 0;
 
 // Load all game objects
@@ -28,7 +29,9 @@ let objects: (new () => GameObject)[] = [];
 let placedObjects: GameObject[] = [];
 
 async function loadObjects() {
-    const files: string[] = fs.readdirSync(path.resolve(process.cwd(), "src/objects"));
+    const files: string[] = fs.readdirSync(
+        path.resolve(process.cwd(), "src/objects"),
+    );
 
     for (let i = 0; i < files.length; ++i) {
         const file: string = files[i]!;
@@ -57,7 +60,7 @@ async function loadObjects() {
 
 await loadObjects();
 
-let selectedObject = new objects[objectIndex]!;
+let selectedObject = new objects[objectIndex]!();
 
 if (selectedObject === undefined) {
     console.error("Failed to load selectedObject");
@@ -83,19 +86,21 @@ function draw() {
                     continue;
                 }
 
-                out += `[-]`
+                out += `[-]`;
                 continue;
             }
 
             const doesExist: boolean = placedObjects.some(
-                (v: GameObject) => v.getPosition().y === i && v.getPosition().x === p
+                (v: GameObject) =>
+                    v.getPosition().y === i && v.getPosition().x === p,
             );
 
             // console.log(doesExist);
 
             if (doesExist) {
                 const placedObject: GameObject | undefined = placedObjects.find(
-                    (v: GameObject) => v.getPosition().y === i && v.getPosition().x === p
+                    (v: GameObject) =>
+                        v.getPosition().y === i && v.getPosition().x === p,
                 );
 
                 if (placedObject !== undefined) {
@@ -120,7 +125,15 @@ function draw() {
 }
 
 function searchMenuDraw() {
-
+    let out: string = "";
+    for (let i = 0; i < options.length; ++i) {
+        if (i === searchY) {
+            out += `[${options[i]}]`;
+        } else {
+            out += ` ${options[i]}`;
+        }
+    }
+    console.log(out);
 }
 
 function update() {
@@ -133,18 +146,24 @@ function move(deltaY: number, deltaX: number) {
     } else if (y + deltaY > width - 1 || y + deltaY < 0) {
         return;
     }
-    y += deltaY
+    y += deltaY;
     x += deltaX;
 }
 
 async function saveToFile() {
-    const saveObj: { objects: GameObject[], width: number, height: number } = {
+    const saveObj: { objects: GameObject[]; width: number; height: number } = {
         objects: placedObjects,
         width: width,
         height: height,
-    }
+    };
 
-    await Bun.file(path.resolve(process.cwd(), "src/levels", `${await Bun.randomUUIDv7()}.json`)).write(JSON.stringify(saveObj));
+    await Bun.file(
+        path.resolve(
+            process.cwd(),
+            "src/levels",
+            `${await Bun.randomUUIDv7()}.json`,
+        ),
+    ).write(JSON.stringify(saveObj));
 }
 
 cursor = selectedObject.getSprite().color(selectedObject.getSprite().ch);
@@ -156,7 +175,7 @@ stdin.on("data", async (key: string) => {
     if (flags.editing) {
         switch (key) {
             case "w":
-                move(-1, 0)
+                move(-1, 0);
                 break;
             case "d":
                 move(0, 1);
@@ -171,9 +190,13 @@ stdin.on("data", async (key: string) => {
                 if (objectIndex + 1 >= objects.length) break;
                 objectIndex++;
                 try {
-                    cursor = selectedObject.getSprite().color(selectedObject.getSprite().ch)
+                    cursor = selectedObject
+                        .getSprite()
+                        .color(selectedObject.getSprite().ch);
                 } catch (err) {
-                    console.log(`Failed to change cursor to ${selectedObject.getSprite()}`);
+                    console.log(
+                        `Failed to change cursor to ${selectedObject.getSprite()}`,
+                    );
                     process.exit(1);
                 }
                 break;
@@ -182,9 +205,13 @@ stdin.on("data", async (key: string) => {
                 objectIndex--;
 
                 try {
-                    cursor = selectedObject.getSprite().color(selectedObject.getSprite().ch)
+                    cursor = selectedObject
+                        .getSprite()
+                        .color(selectedObject.getSprite().ch);
                 } catch (err) {
-                    console.log(`Failed to change cursor to ${selectedObject.getSprite()}`);
+                    console.log(
+                        `Failed to change cursor to ${selectedObject.getSprite()}`,
+                    );
                     process.exit(1);
                 }
                 break;
@@ -198,16 +225,19 @@ stdin.on("data", async (key: string) => {
 
                 // 2. Fix the .find (or use .some) with a proper return
                 const doesExist: boolean = placedObjects.some(
-                    (v: GameObject) => v.getPosition().y === y && v.getPosition().x === x
+                    (v: GameObject) =>
+                        v.getPosition().y === y && v.getPosition().x === x,
                 );
 
                 if (!doesExist) {
                     placedObjects.push(selectedObject);
-                    selectedObject = new objects[objectIndex]!;
+                    selectedObject = new objects[objectIndex]!();
                 }
                 break;
             case "e":
                 // Search functionality
+                flags.editing = false;
+                flags.resizing = false;
                 flags.searching = true;
                 break;
             case "S":
@@ -242,6 +272,15 @@ stdin.on("data", async (key: string) => {
     } else if (flags.searching) {
         switch (key) {
             case "w":
+                if (searchY - 1 > 0) {
+                    searchY--;
+                }
+                break;
+            case "s":
+                if (searchY + 1 > options.length) searchY++;
+                break;
+            case "q":
+                process.exit(0);
                 break;
         }
     }
@@ -250,6 +289,7 @@ stdin.on("data", async (key: string) => {
         update();
         draw();
     } else {
+        update();
         searchMenuDraw();
     }
-})
+});
